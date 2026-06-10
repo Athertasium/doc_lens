@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  filename   String
+  fileSize   Int
+  pageCount  Int?
+  uploadedAt DateTime @default(now())
+  sessionId  String
+  chunks     Chunk[]
+}
+
+model Chunk {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  pageNumber Int
+  chunkIndex Int
+  charOffset Int
+  tokenCount Int?
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+}
+
+model QueryLog {
+  id          String   @id @default(cuid())
+  sessionId   String
+  question    String
+  answer      String
+  citedChunks Json
+  latencyMs   Int?
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId])
+}
