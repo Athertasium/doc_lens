@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { embedQuery } from "@/lib/embeddings";
-import { denseRetrieve } from "@/lib/retrieval";
+import { hybridRetrieve } from "@/lib/retrieval";
 import { generateAnswer } from "@/lib/generator";
 import { db } from "@/lib/db";
 import { ApiResponse, QueryResult } from "@/lib/types";
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const start = Date.now();
 
   const queryEmbedding = await embedQuery(question);
-  const chunks = await denseRetrieve(queryEmbedding, sessionId, 10);
+  const chunks = await hybridRetrieve(question, queryEmbedding, sessionId);
 
   if (chunks.length === 0) {
     return NextResponse.json<ApiResponse<QueryResult>>({

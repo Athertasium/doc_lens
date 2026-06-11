@@ -18,15 +18,17 @@ model Document {
 }
 
 model Chunk {
-  id         String   @id @default(cuid())
+  id         String                        @id @default(cuid())
   documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document   Document                      @relation(fields: [documentId], references: [id], onDelete: Cascade)
   content    String
   pageNumber Int
   chunkIndex Int
   charOffset Int
   tokenCount Int?
-  createdAt  DateTime @default(now())
+  embedding  Unsupported("vector(2048)")?
+  tsv        Unsupported("tsvector")?
+  createdAt  DateTime                      @default(now())
 
   @@index([documentId])
 }

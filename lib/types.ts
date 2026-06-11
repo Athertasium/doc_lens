@@ -37,11 +37,13 @@ export interface RetrievedChunk {
   charOffset: number;
   filename: string;
   score: number;
+  rrfScore?: number;
 }
 
 export interface Citation {
   chunkId: string;
   score: number;
+  rrfScore?: number;
   pageNumber: number;
   snippet: string;
   filename: string;

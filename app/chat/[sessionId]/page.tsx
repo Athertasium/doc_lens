@@ -7,6 +7,7 @@ import Link from "next/link";
 interface Citation {
   chunkId: string;
   score: number;
+  rrfScore?: number;
   pageNumber: number;
   snippet: string;
   filename: string;
@@ -334,11 +335,18 @@ function CitationCard({
         <span style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
           {citation.filename} · p.{citation.pageNumber}
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          <ScoreBar score={citation.score} color={scoreColor} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: scoreColor }}>
-            {citation.score.toFixed(3)}
-          </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <ScoreBar score={citation.score} color={scoreColor} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: scoreColor }}>
+              {citation.score.toFixed(3)}
+            </span>
+          </div>
+          {citation.rrfScore !== undefined && (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-dim)" }}>
+              rrf {citation.rrfScore.toFixed(4)}
+            </span>
+          )}
         </div>
         <svg
           width="12" height="12" viewBox="0 0 24 24" fill="none"
