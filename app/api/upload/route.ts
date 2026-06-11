@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     // non-fatal
   }
 
-  const sessionId = crypto.randomUUID();
+  const existingSessionId = (formData.get("sessionId") as string | null)?.trim() || null;
+  const sessionId = existingSessionId ?? crypto.randomUUID();
 
   const document = await db.document.create({
     data: {
