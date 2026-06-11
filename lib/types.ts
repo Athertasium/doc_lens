@@ -28,3 +28,27 @@ export interface IngestResult {
   chunkCount: number;
   embeddingDurationMs: number;
 }
+
+export interface RetrievedChunk {
+  id: string;
+  content: string;
+  pageNumber: number;
+  chunkIndex: number;
+  charOffset: number;
+  filename: string;
+  score: number;
+}
+
+export interface Citation {
+  chunkId: string;
+  score: number;
+  pageNumber: number;
+  snippet: string;
+  filename: string;
+}
+
+export interface QueryResult {
+  answer: string;
+  citations: Citation[];
+  latencyMs: number;
+}
