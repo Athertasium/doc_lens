@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { embedQuery } from "@/lib/embeddings";
-import { hybridRetrieve } from "@/lib/retrieval";
-import { generateAnswer } from "@/lib/generator";
+import { tracedHybridRetrieve, tracedGenerateAnswer } from "@/lib/langsmith";
 import { db } from "@/lib/db";
 import { ApiResponse, QueryResult } from "@/lib/types";
 
@@ -19,7 +18,7 @@ export async function POST(req: NextRequest) {
   const start = Date.now();
 
   const queryEmbedding = await embedQuery(question);
-  const chunks = await hybridRetrieve(question, queryEmbedding, sessionId);
+  const chunks = await tracedHybridRetrieve(question, queryEmbedding, sessionId);
 
   if (chunks.length === 0) {
     return NextResponse.json<ApiResponse<QueryResult>>({
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { answer, citations } = await generateAnswer(question, chunks);
+  const { answer, citations } = await tracedGenerateAnswer(question, chunks);
   const latencyMs = Date.now() - start;
 
   await db.queryLog.create({

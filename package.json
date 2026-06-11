@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "eval": "bun scripts/eval/run_eval.ts",
+    "eval:langsmith": "bun scripts/eval/run_langsmith_experiment.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
