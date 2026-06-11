@@ -1,0 +1,137 @@
+[
+  {
+    "id": "q001",
+    "question": "How much capital was raised in the investment round?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["2.13"],
+    "expected_source_chunk_contains": "2.13 MNOK"
+  },
+  {
+    "id": "q002",
+    "question": "What is the return customer rate?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["80%"],
+    "expected_source_chunk_contains": "80%"
+  },
+  {
+    "id": "q003",
+    "question": "Who is the first customer in Canada?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Film Factory Montreal"],
+    "expected_source_chunk_contains": "Film Factory Montreal"
+  },
+  {
+    "id": "q004",
+    "question": "What is the revenue for the first four months of 2017?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["200 kNOK"],
+    "expected_source_chunk_contains": "200 kNOK"
+  },
+  {
+    "id": "q005",
+    "question": "Where are the new permanent developers based?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Poland"],
+    "expected_source_chunk_contains": "film capital of Poland"
+  },
+  {
+    "id": "q006",
+    "question": "Who joined Drylab as a new mentor in 2017?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Caitlin Burns"],
+    "expected_source_chunk_contains": "Caitlin Burns"
+  },
+  {
+    "id": "q007",
+    "question": "Where will Drylab 3.0 be launched?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Amsterdam"],
+    "expected_source_chunk_contains": "Amsterdam"
+  },
+  {
+    "id": "q008",
+    "question": "How much did Innovation Norway loan to Drylab?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["2.05 MNOK"],
+    "expected_source_chunk_contains": "2.05 MNOK"
+  },
+  {
+    "id": "q009",
+    "question": "Which Oscar-winning film did the high-profile user Gareth Unwin produce?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["King's Speech"],
+    "expected_source_chunk_contains": "King's Speech"
+  },
+  {
+    "id": "q010",
+    "question": "When is Drylab's Annual General Meeting?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["June 16"],
+    "expected_source_chunk_contains": "June 16"
+  },
+  {
+    "id": "q011",
+    "question": "Which French company started using Drylab?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Lumiere Numeriques"],
+    "expected_source_chunk_contains": "Lumiere Numeriques"
+  },
+  {
+    "id": "q012",
+    "question": "What event did Apple invite Drylab to attend?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["WWDC"],
+    "expected_source_chunk_contains": "World Wide Developers Conference"
+  },
+  {
+    "id": "q013",
+    "question": "What was Drylab's total revenue for all of 2016?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["339 kNOK"],
+    "expected_source_chunk_contains": "339 kNOK"
+  },
+  {
+    "id": "q014",
+    "question": "Which trade show did Drylab decide not to attend?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["Cine Gear"],
+    "expected_source_chunk_contains": "Cine Gear"
+  },
+  {
+    "id": "q015",
+    "question": "How far behind schedule is Drylab's development?",
+    "is_in_scope": true,
+    "expected_answer_contains": ["one month"],
+    "expected_source_chunk_contains": "one month behind"
+  },
+  {
+    "id": "q016",
+    "question": "What is the current stock price of Drylab?",
+    "is_in_scope": false,
+    "expected_abstain": true
+  },
+  {
+    "id": "q017",
+    "question": "Who is the CEO of Drylab?",
+    "is_in_scope": false,
+    "expected_abstain": true
+  },
+  {
+    "id": "q018",
+    "question": "What is the monthly subscription price for Drylab?",
+    "is_in_scope": false,
+    "expected_abstain": true
+  },
+  {
+    "id": "q019",
+    "question": "How many employees does Drylab have in total globally?",
+    "is_in_scope": false,
+    "expected_abstain": true
+  },
+  {
+    "id": "q020",
+    "question": "When was Drylab first incorporated as a company?",
+    "is_in_scope": false,
+    "expected_abstain": true
+  }
+]
