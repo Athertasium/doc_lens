@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { embedQuery } from "@/lib/embeddings";
 import { tracedHybridRetrieve, tracedGenerateAnswer } from "@/lib/langsmith";
 import { db } from "@/lib/db";
 import { ApiResponse, QueryResult } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? (session.user as { id?: string }).id ?? null : null;
+
   const body = await req.json();
   const { question, sessionId } = body as { question?: string; sessionId?: string };
 
@@ -34,15 +39,24 @@ export async function POST(req: NextRequest) {
   const { answer, citations } = await tracedGenerateAnswer(question, chunks);
   const latencyMs = Date.now() - start;
 
-  await db.queryLog.create({
-    data: {
-      sessionId,
-      question,
-      answer,
-      citedChunks: citations as object[],
-      latencyMs,
-    },
-  });
+  await Promise.all([
+    db.queryLog.create({
+      data: {
+        sessionId,
+        userId,
+        question,
+        answer,
+        citedChunks: citations as object[],
+        latencyMs,
+      },
+    }),
+    userId
+      ? db.chatSession.updateMany({
+          where: { id: sessionId, userId },
+          data: { updatedAt: new Date() },
+        })
+      : Promise.resolve(),
+  ]);
 
   return NextResponse.json<ApiResponse<QueryResult>>({
     success: true,

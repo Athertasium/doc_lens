@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user ? (session.user as { id?: string }).id ?? null : null;
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
 
@@ -31,12 +36,32 @@ export async function POST(req: NextRequest) {
   const existingSessionId = (formData.get("sessionId") as string | null)?.trim() || null;
   const sessionId = existingSessionId ?? crypto.randomUUID();
 
+  // Upsert ChatSession — creates on first upload, updates title/updatedAt on subsequent
+  if (userId) {
+    const existing = await db.chatSession.findUnique({ where: { id: sessionId } });
+    if (!existing) {
+      await db.chatSession.create({
+        data: {
+          id: sessionId,
+          userId,
+          title: file.name.replace(/\.pdf$/i, ""),
+        },
+      });
+    } else {
+      await db.chatSession.update({
+        where: { id: sessionId },
+        data: { updatedAt: new Date() },
+      });
+    }
+  }
+
   const document = await db.document.create({
     data: {
       filename: file.name,
       fileSize: file.size,
       pageCount,
       sessionId,
+      userId,
     },
   });
 

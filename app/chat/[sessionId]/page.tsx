@@ -162,8 +162,23 @@ export default function ChatPage() {
         </div>
 
         <div style={{ display: "flex", gap: 6 }}>
-          <HeaderBtn>EXPORT</HeaderBtn>
-          <HeaderBtn>SHARE</HeaderBtn>
+          <Link
+            href="/sessions"
+            style={{
+              padding: "6px 14px",
+              background: "transparent",
+              border: "1px solid var(--border-mid)",
+              color: "var(--text-secondary)",
+              borderRadius: 999,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+              textDecoration: "none",
+            }}
+          >
+            SESSIONS
+          </Link>
           <Link
             href="/"
             style={{
