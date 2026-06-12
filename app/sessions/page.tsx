@@ -75,7 +75,7 @@ export default async function SessionsPage() {
           </span>
           <SignOutButton />
           <Link
-            href="/"
+            href="/upload"
             style={{
               padding: "6px 14px",
               background: "var(--accent)",

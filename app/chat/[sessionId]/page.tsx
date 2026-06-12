@@ -180,7 +180,7 @@ export default function ChatPage() {
             SESSIONS
           </Link>
           <Link
-            href="/"
+            href="/upload"
             style={{
               padding: "6px 14px",
               background: "var(--text)",
