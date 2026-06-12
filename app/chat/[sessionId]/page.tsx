@@ -14,10 +14,17 @@ interface Citation {
 }
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
   citations?: Citation[];
   latencyMs?: number;
+  docMeta?: { filename: string; chunkCount: number; pageCount?: number };
+}
+
+interface CitationGroup {
+  question: string;
+  citations: Citation[];
+  msgIndex: number;
 }
 
 export default function ChatPage() {
@@ -27,8 +34,10 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,9 +86,50 @@ export default function ChatPage() {
     }
   }
 
-  const msgCount = messages.length;
-  const lastAnswer = messages.filter(m => m.role === "assistant").at(-1);
-  const allCitations = lastAnswer?.citations ?? [];
+  const uploadFile = useCallback(async (file: File) => {
+    if (!file || file.type !== "application/pdf") {
+      setError("Only PDF files accepted");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("sessionId", sessionId);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.error ?? "Upload failed");
+        return;
+      }
+      const { chunkCount, pageCount } = json.data;
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          content: "",
+          docMeta: { filename: file.name, chunkCount: chunkCount ?? 0, pageCount },
+        },
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [sessionId]);
+
+  const msgCount = messages.filter((m) => m.role !== "system").length;
+
+  // Accumulate all citation groups across all turns
+  const citationGroups: CitationGroup[] = messages.reduce<CitationGroup[]>((acc, msg, i) => {
+    if (msg.role === "assistant" && msg.citations && msg.citations.length > 0) {
+      const question = messages[i - 1]?.content ?? "";
+      acc.push({ question, citations: msg.citations, msgIndex: i });
+    }
+    return acc;
+  }, []);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
@@ -151,18 +201,20 @@ export default function ChatPage() {
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", color: "var(--text-faint)" }}>
               CONTEXT
             </span>
-            {allCitations.length > 0 && (
+            {citationGroups.length > 0 && (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.1em" }}>
-                {allCitations.length} CHUNK{allCitations.length > 1 ? "S" : ""} RETRIEVED
+                {citationGroups.reduce((n, g) => n + g.citations.length, 0)} CHUNKS · {citationGroups.length} TURN{citationGroups.length > 1 ? "S" : ""}
               </span>
             )}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
-            {allCitations.length === 0 ? (
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 20 }}>
+            {citationGroups.length === 0 ? (
               <ContextEmpty />
             ) : (
-              <ContextChunks citations={allCitations} />
+              citationGroups.map((group) => (
+                <ContextGroup key={group.msgIndex} group={group} />
+              ))
             )}
           </div>
         </div>
@@ -210,6 +262,8 @@ export default function ChatPage() {
               <div key={i} style={{ animation: "fade-in 0.2s ease" }}>
                 {msg.role === "user" ? (
                   <UserBubble content={msg.content} />
+                ) : msg.role === "system" ? (
+                  <DocAddedBubble meta={msg.docMeta!} />
                 ) : (
                   <AssistantBubble
                     content={msg.content}
@@ -227,7 +281,43 @@ export default function ChatPage() {
 
           {/* Input */}
           <div style={{ borderTop: "1px solid var(--border)", padding: "14px 22px", flexShrink: 0 }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }}
+            />
             <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || loading}
+                title="Add PDF to this session"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 6,
+                  border: "1px solid var(--border-strong)",
+                  background: uploading ? "rgba(43,127,255,0.1)" : "rgba(238,238,238,0.04)",
+                  color: uploading ? "var(--accent)" : "var(--text-faint)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: uploading || loading ? "not-allowed" : "pointer",
+                  flexShrink: 0,
+                  transition: "border-color 150ms, color 150ms",
+                }}
+              >
+                {uploading ? (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}>
+                    <path d="M21 12a9 9 0 11-6.219-8.56" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -278,7 +368,7 @@ export default function ChatPage() {
               </button>
             </div>
             <p style={{ marginTop: 8, fontSize: 10, color: "var(--text-faint)", fontFamily: "var(--font-mono)", letterSpacing: "0.08em" }}>
-              ↵ SEND · ⇧↵ NEWLINE
+              ↵ SEND · ⇧↵ NEWLINE · CLIP ADD PDF
             </p>
           </div>
         </div>
@@ -326,51 +416,96 @@ function ContextEmpty() {
   );
 }
 
-function ContextChunks({ citations }: { citations: Citation[] }) {
+function ContextGroup({ group }: { group: CitationGroup }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", color: "var(--text-faint)" }}>
-        RETRIEVED CHUNKS · HYBRID RRF MERGE
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* Turn label */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.14em", color: "var(--text-faint)", whiteSpace: "nowrap" }}>
+          Q{group.msgIndex === 1 ? "1" : String(Math.ceil(group.msgIndex / 2))} ·
+        </span>
+        <span style={{ fontSize: 11.5, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+          {group.question.slice(0, 60)}{group.question.length > 60 ? "…" : ""}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.08em", whiteSpace: "nowrap" }}>
+          {group.citations.length} SRC
+        </span>
       </div>
-      {citations.map((c, i) => {
-        const pct = Math.round(c.score * 100);
-        const scoreColor = c.score >= 0.85 ? "var(--green)" : c.score >= 0.65 ? "var(--yellow)" : "var(--red)";
-        return (
-          <div key={c.chunkId} style={{
-            border: "1px solid var(--border)",
-            borderLeft: `3px solid var(--accent)`,
-            borderRadius: "0 4px 4px 0",
-            background: "rgba(43,127,255,0.03)",
-            padding: "12px 14px",
-            animation: `fade-in 0.25s ease ${i * 60}ms both`,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>
-                  [{i + 1}]
-                </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.04em" }}>
-                  {c.filename} · P.{c.pageNumber}
-                </span>
-              </div>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: scoreColor, fontWeight: 600 }}>
-                {pct}%
-              </span>
-            </div>
-            <div style={{ height: 3, background: "rgba(238,238,238,0.06)", borderRadius: 999, overflow: "hidden", marginBottom: 10 }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: scoreColor }} />
-            </div>
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)", fontStyle: "italic" }}>
-              &ldquo;{c.snippet.slice(0, 200)}{c.snippet.length > 200 ? "…" : ""}&rdquo;
-            </p>
-            {c.rrfScore !== undefined && (
-              <div style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--text-faint)", letterSpacing: "0.06em" }}>
-                RRF {c.rrfScore.toFixed(4)}
-              </div>
-            )}
-          </div>
-        );
-      })}
+
+      {group.citations.map((c, i) => (
+        <ContextChunkCard key={c.chunkId} citation={c} index={i + 1} />
+      ))}
+    </div>
+  );
+}
+
+function ContextChunkCard({ citation: c, index }: { citation: Citation; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const pct = Math.round(c.score * 100);
+  const scoreColor = c.score >= 0.85 ? "var(--green)" : c.score >= 0.65 ? "var(--yellow)" : "var(--red)";
+  const PREVIEW_LEN = 140;
+  const isLong = c.snippet.length > PREVIEW_LEN;
+
+  return (
+    <div
+      style={{
+        border: "1px solid var(--border)",
+        borderLeft: "3px solid var(--accent)",
+        borderRadius: "0 4px 4px 0",
+        background: "rgba(43,127,255,0.03)",
+        padding: "11px 13px",
+        cursor: isLong ? "pointer" : "default",
+        transition: "background 150ms",
+      }}
+      onClick={() => isLong && setExpanded(v => !v)}
+    >
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>
+            [{index}]
+          </span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.04em" }}>
+            {c.filename} · P.{c.pageNumber}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: scoreColor, fontWeight: 600 }}>
+            {pct}%
+          </span>
+          {isLong && (
+            <svg
+              width="11" height="11" viewBox="0 0 24 24" fill="none"
+              style={{ flexShrink: 0, transition: "transform 150ms", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            >
+              <path d="M6 9l6 6 6-6" stroke="var(--text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div style={{ height: 2, background: "rgba(238,238,238,0.06)", borderRadius: 999, overflow: "hidden", marginBottom: 9 }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: scoreColor }} />
+      </div>
+
+      {/* Snippet */}
+      <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, lineHeight: 1.65, color: "var(--text-secondary)", fontStyle: "italic" }}>
+        &ldquo;{expanded ? c.snippet : c.snippet.slice(0, PREVIEW_LEN)}{!expanded && isLong ? "…" : ""}&rdquo;
+      </p>
+
+      {/* Expand hint */}
+      {isLong && !expanded && (
+        <div style={{ marginTop: 7, fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--accent)", letterSpacing: "0.08em", opacity: 0.7 }}>
+          CLICK TO EXPAND
+        </div>
+      )}
+
+      {c.rrfScore !== undefined && expanded && (
+        <div style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--text-faint)", letterSpacing: "0.06em" }}>
+          RRF {c.rrfScore.toFixed(4)}
+        </div>
+      )}
     </div>
   );
 }
@@ -516,6 +651,34 @@ function ErrorBanner({ message }: { message: string }) {
       letterSpacing: "0.04em",
     }}>
       ERROR · {message}
+    </div>
+  );
+}
+
+function DocAddedBubble({ meta }: { meta: { filename: string; chunkCount: number; pageCount?: number } }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 14px",
+        border: "1px solid rgba(43,127,255,0.2)",
+        borderRadius: 999,
+        background: "rgba(43,127,255,0.06)",
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>
+          {meta.filename}
+        </span>
+        <span style={{ width: 1, height: 10, background: "var(--border-strong)" }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.08em" }}>
+          {meta.chunkCount} CHUNKS{meta.pageCount ? ` · ${meta.pageCount}P` : ""}
+        </span>
+      </div>
     </div>
   );
 }
