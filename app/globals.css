@@ -1,23 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0c0c0e;
-  --surface: #141416;
-  --surface-2: #1c1c1f;
-  --border: #2a2a2e;
-  --border-subtle: #1f1f23;
-  --text: #f0f0f2;
-  --text-muted: #6b6b75;
-  --text-dim: #3a3a42;
-  --accent: #7c6af7;
-  --accent-dim: #3d3574;
-  --accent-glow: rgba(124, 106, 247, 0.12);
+  --bg: #0a0a0c;
+  --bg-app: #181818;
+  --bg-pdf: #161616;
+  --bg-chat: #141414;
+  --surface: #1e1e20;
+  --surface-2: #242426;
+  --border: rgba(238, 238, 238, 0.08);
+  --border-mid: rgba(238, 238, 238, 0.12);
+  --border-strong: #262626;
+  --text: #eeeeee;
+  --text-secondary: #c8c8c8;
+  --text-muted: #a8a8a8;
+  --text-dim: #7a7a7a;
+  --text-faint: #5e5d59;
+  --accent: #2b7fff;
+  --accent-bg: rgba(43, 127, 255, 0.08);
+  --accent-border: rgba(43, 127, 255, 0.25);
+  --accent-glow: rgba(43, 127, 255, 0.12);
   --green: #4ade80;
+  --green-glow: rgba(74, 222, 128, 0.6);
   --yellow: #fbbf24;
   --red: #f87171;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Inter", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: "Libre Baskerville", Georgia, serif;
 }
 
 * {
@@ -26,16 +35,21 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: var(--accent-dim);
-  color: var(--text);
+  background: rgba(43, 127, 255, 0.32);
+  color: #fff;
 }
 
 ::-webkit-scrollbar {
@@ -43,19 +57,33 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: rgba(238, 238, 238, 0.08);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(238, 238, 238, 0.14);
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
+  50% { box-shadow: 0 0 12px rgba(74, 222, 128, 0.9), 0 0 20px rgba(74, 222, 128, 0.3); }
 }
