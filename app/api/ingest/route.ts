@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDocumentProxy, extractText } from "unpdf";
 import { db } from "@/lib/db";
 import { chunkDocument } from "@/lib/chunker";
 import { embedTexts } from "@/lib/embeddings";
@@ -19,8 +20,6 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(bufferArray);
-  const { getDocumentProxy, extractText } = await import("unpdf");
-
   const pdfDoc = await getDocumentProxy(new Uint8Array(buffer));
   const totalPages = pdfDoc.numPages;
   const { text: pageTexts } = await extractText(pdfDoc, { mergePages: false });

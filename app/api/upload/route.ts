@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDocumentProxy } from "unpdf";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -23,7 +24,6 @@ export async function POST(req: NextRequest) {
 
   let pageCount: number | null = null;
   try {
-    const { getDocumentProxy } = await import("unpdf");
     const pdfDoc = await getDocumentProxy(new Uint8Array(buffer));
     pageCount = pdfDoc.numPages;
   } catch {
