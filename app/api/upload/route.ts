@@ -23,12 +23,9 @@ export async function POST(req: NextRequest) {
 
   let pageCount: number | null = null;
   try {
-    const { PDFParse } = await import("pdf-parse") as unknown as {
-      PDFParse: new (opts: { data: Buffer }) => { load(): Promise<{ numPages: number }> };
-    };
-    const parser = new PDFParse({ data: buffer });
-    const doc = await parser.load();
-    pageCount = doc.numPages;
+    const { getDocumentProxy } = await import("unpdf");
+    const pdfDoc = await getDocumentProxy(new Uint8Array(buffer));
+    pageCount = pdfDoc.numPages;
   } catch {
     // non-fatal
   }

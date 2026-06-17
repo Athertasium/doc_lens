@@ -3,26 +3,6 @@ import { db } from "@/lib/db";
 import { chunkDocument } from "@/lib/chunker";
 import { embedTexts } from "@/lib/embeddings";
 
-interface PDFPageResult {
-  text: string;
-  num: number;
-}
-
-interface PDFTextResult {
-  pages: PDFPageResult[];
-  text: string;
-  total: number;
-}
-
-interface PDFParseInstance {
-  load(): Promise<{ numPages: number }>;
-  getText(opts: { pages: number[] }): Promise<PDFTextResult>;
-}
-
-interface PDFParseModule {
-  PDFParse: new (opts: { data: Buffer }) => PDFParseInstance;
-}
-
 export async function POST(req: NextRequest) {
   const { documentId, buffer: bufferArray } = await req.json();
 
@@ -39,18 +19,15 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(bufferArray);
-  const { PDFParse } = await import("pdf-parse") as unknown as PDFParseModule;
+  const { getDocumentProxy, extractText } = await import("unpdf");
 
-  const parser = new PDFParse({ data: buffer });
-  const doc = await parser.load();
-  const totalPages = doc.numPages;
+  const pdfDoc = await getDocumentProxy(new Uint8Array(buffer));
+  const totalPages = pdfDoc.numPages;
+  const { text: pageTexts } = await extractText(pdfDoc, { mergePages: false });
 
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const result = await parser.getText({ pages: pageNumbers });
-
-  const pages = result.pages.map((p) => ({
-    text: p.text,
-    pageNumber: p.num,
+  const pages = (pageTexts as string[]).map((text, i) => ({
+    text,
+    pageNumber: i + 1,
   }));
 
   const chunks = chunkDocument(pages, document.filename);
